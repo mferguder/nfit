@@ -110,7 +110,7 @@ private:
   double Ls; //new 2/16/15
   double edisp, divergeX, divergeZ; // new 2/26/15
   double teff; // new 3/30/15
-  double mosaic;
+  double mosaic,rst;
   double wavelength, pixelSize, bFWHM, sdistance, beamSigma;
 
   // beam coherence lengths NEW 2/26/15
