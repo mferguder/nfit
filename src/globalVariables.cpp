@@ -1,6 +1,6 @@
 #define PI 3.1415926535897932384626433832795
 
-int g_totalNumOfFitParams = 21; // was 17 (2/16/15)
+int g_totalNumOfFitParams = 22; // was 17 (2/16/15) // was 21 mfe
 // 4 new parameters: {Ls,divergeX,divergeZ,teff}
 
 double xlow = 0;
