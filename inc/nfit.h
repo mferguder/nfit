@@ -23,7 +23,8 @@ enum Var {
   Var_divergeX, // 18 (new 2/26/15)
   Var_divergeZ, // 19 (new 2/26/15)
   Var_teff, // 20 (new 3/30/15)
-  Var_WrongInput // 21
+  Var_rst, // 21 mfe
+  Var_WrongInput // 22 // was 21 mfe
 };
 
 extern const char *Varname[];
