@@ -32,6 +32,7 @@ public:
   double divergeX; // beam divergence in x-direction, typically 0.0001 rad 2/26/15
   double divergeZ; // beam divergence in z-direction, typically 0.0001 rad 2/26/15
   double teff; // absorption length divided by sample thickness, ~260 3/30/15
+  double rst;
   /////////////////////////////////////////////////////////////////////////////
   
   double beamSigma; // beamFWHM in q-space (inverse Angstrom)
