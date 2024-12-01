@@ -22,5 +22,6 @@ const char *Varname[] = {
   "divergeX",
   "divergeZ",
   "teff",
+  "rst", // mfe
   (char *) NULL
 };
