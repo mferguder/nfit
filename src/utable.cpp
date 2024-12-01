@@ -155,7 +155,10 @@ double Utable::dointeg(double rho, double ell,double rst, int n, double upperlim
 			abs_error, rel_error, memory, work_ptr, &result,
 			&error);
     } else {
-      result = nzero_small_rho(rho, ell,rst, upperlim); // Numerical integration doesn't give correct answer for small rho
+      //result = nzero_small_rho(rho, ell,rst, upperlim); // Numerical integration doesn't give correct answer for small rho
+      gsl_integration_qags (&My_function, lower_limit, upper_limit,
+			abs_error, rel_error, memory, work_ptr, &result,
+			&error);
     }
   }
   
@@ -306,7 +309,8 @@ double Utable::getHeightDiffFunc(int n, double r, double xi,
             ret = dointeg(rho, ell,rst, n, upperlim);
 		} else {
 //cout << "Asymptotic form" << endl;
-            ret = AsymForm(rho, ell,rst, n, upperlim);
+            //ret = AsymForm(rho, ell,rst, n, upperlim);
+            ret = dointeg(rho, ell,rst, n, upperlim);
 		}
 	}
 	return ret * eta * D * D / 2 / pi / pi;
