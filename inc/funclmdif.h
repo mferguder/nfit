@@ -48,7 +48,7 @@ private:
   Para *para;
   ModelCalculator *mc;
   double bestChisq;
-  double bestParams[21]; // was 20
+  double bestParams[21]; // was 20 // mfe should I change this?
   char bestChain[256];
   int funclmdif(int m,int n,double *par,double *fvec,void*);
   static void* modelCalcThread(void *args);

@@ -2,7 +2,7 @@
 #define GUARD_GLOBALVARIABLES_H
 
 extern int g_totalNumOfFitParams;
-#define TOTAL_NUM_OF_FIT_PARAMS 19 // was 15 (2/16/15)
+#define TOTAL_NUM_OF_FIT_PARAMS 20 // was 15 (2/16/15) // was 19 mfe
 // 4 new parameters {Ls,divergeX,divergeZ,teff}
 
 extern double xlow;

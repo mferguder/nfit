@@ -13,8 +13,8 @@ set FLICAM 1
 # paramNames: TCL list that contains the names of fitting parameters
 # Useful for accessing elements in paramArray and freeOrFixed arrays
 set paramNames {Kc B Lr Mz D mosaic edisp bFWHM s bc2b wavelength \
-	              pixelSize qxzero nindex T Kt at Ls divergeX divergeZ teff}
-	              
+pixelSize qxzero nindex T Kt at Ls divergeX divergeZ teff rst} # mfe
+
 # paramArray: TCL array for the values of the fitting parameters
 # The following lines simply initialize the array and the entries in the 
 # fitting panel
@@ -39,6 +39,7 @@ set paramArray(Ls) 5
 set paramArray(divergeX) 1e-4
 set paramArray(divergeZ) 1e-4
 set paramArray(teff) 260
+set paramArray(rst) -0.5 # mfe
 
 # freeOrFixed: TCL array, if an element is 1, the correspoinding variable 
 # specified by paramNames becomes a fitting parameter. If 0, the variable value 

@@ -19,7 +19,8 @@ using std::cerr;
 #define WORKSPACE_SIZE 100000
 #define KEY 6
 const double Utable::pi = 3.1415926535897932384626433832795;
-
+const double pii = 3.1415926535897932384626433832795;
+double R_ST;// MFE elliptic integrals starts not working, around -.05
 //Constructor
 Utable::Utable()
 {
@@ -58,14 +59,60 @@ void Utable::interp2d_splines_accs_cleanup()
 	}*/
 }
 
-//Compute desired integral
-double Utable::heightDiff(double rho, double ell, int n, double upperlim)
+bool solveCubic(double a, double b, double c, double d,long double &r1, long double &r2, long double &r3)
 {
-    return dointeg(rho, ell, n, upperlim);
+double B = b/a, C = c/a, D = d/a;
+double Q = (B*B - C*3.0)/9.0, QQQ = Q*Q*Q; // f/3
+double R = (2.0*B*B*B - 9.0*B*C + 27.0*D)/54.0, RR = R*R; //g/2
+//printf ("Q,R = % .18f % .18f \n",Q,R);
+
+// 3 real roots
+if(RR<QQQ)
+{
+    double theta = acos(R/sqrt(QQQ));
+    r1 = r2 = r3 = -2.0*sqrt(Q);
+    r1 *= cos(theta/3.0);
+    r2 *= cos((theta+2*pii)/3.0);
+    r3 *= cos((theta-2*pii)/3.0);
+    r1 -= B/3.0;
+    r2 -= B/3.0;
+    r3 -= B/3.0;
+    std::cout << "r1= "<< r1 << "\n r2= " << r2 << "\n r3= " << r3 << "\n";
+
+    return true;
+}
+// 1 real root
+else
+{
+    //printf ("R,sqrt(RR-QQQ) = % .18f % .18f \n",R,sqrt(RR-QQQ));
+    double temp=1.;
+    if (R-sqrt(RR-QQQ)<0){temp=-1.;}
+    double S = -temp*pow(temp*(R-sqrt(RR-QQQ)),1.0/3.0);
+    temp=1.;
+    if (R+sqrt(RR-QQQ)<0){temp=-1.;}
+    double U = -temp*pow(temp*(R+sqrt(RR-QQQ)),1.0/3.0);
+    //printf ("S,U = % .18f % .18f \n",S,U);
+    r1 = S+U;
+    r2 = -r1/2.;
+    r3 = (S-U)*sqrt(3.)/2.;
+    //std::complex<double> r2(-r1/2.,(S-U)*sqrt(3.)/2.);
+    //std::complex<double> r3(-r1/2.,-(S-U)*sqrt(3.)/2.);
+    r1 -= B/3.0;
+    r2 -= B/3.0;
+    
+    //std::cout << "r1= "<< r1 << "\n r2= " << r2 << "\n r3= " << r3 << "\n";
+    return true;
+}
+}
+
+//Compute desired integral
+double Utable::heightDiff(double rho, double ell,double rst, int n, double upperlim)
+{
+    return dointeg(rho, ell,rst, n, upperlim);
 }
 
 // Computes the desired integral as a function of rho, ell, n, and chosen upper limit
-double Utable::dointeg(double rho, double ell, int n, double upperlim)
+double Utable::dointeg(double rho, double ell,double rst, int n, double upperlim)
 {
   double memory = 100000;
   gsl_integration_workspace *work_ptr //work_ptr points to the workspace
@@ -88,6 +135,7 @@ double Utable::dointeg(double rho, double ell, int n, double upperlim)
   f_params pars;
   pars.rho = rho;	//integrand parameter
   pars.ell = ell;	//integrand parameter
+  pars.rst = rst;    //integrand parameter
   pars.n = n;		//integrand parameter
 
   gsl_function My_function;
@@ -107,7 +155,7 @@ double Utable::dointeg(double rho, double ell, int n, double upperlim)
 			abs_error, rel_error, memory, work_ptr, &result,
 			&error);
     } else {
-      result = nzero_small_rho(rho, ell, upperlim);
+      result = nzero_small_rho(rho, ell,rst, upperlim); // Numerical integration doesn't give correct answer for small rho
     }
   }
   
@@ -123,7 +171,8 @@ double Utable::my_integrand (double x, void *params)
 	f_params *pars = (f_params *) params;
 	double part1, part2, part3, temp, ret;
 	part1 = bessel_J0(sqrt(2*x)*pars->rho);
-	temp = (x*x)/(1+x*pars->ell);
+	temp = (x*x)/(1+x*pars->ell*(1+pars->rst))*(1-x*pars->ell*pars->rst*(1+pars->rst)); // MFE
+	// temp = (x*x)/(1+x*pars->ell);
 	part2 = pow(sqrt(1 + temp) - sqrt(temp),2*pars->n);
 	part3 = sqrt(temp)*sqrt(1+temp);
 	ret = (1-part1*part2)/part3;	
@@ -227,8 +276,8 @@ There are three situations:
    valid. The asymptotic form is used to do the calculation.
 ******************************************************************************/
 double Utable::getHeightDiffFunc(int n, double r, double xi, 
-                                 double ell, double eta, double D, double a)
-{ 
+                                 double ell,double rst, double eta, double D, double a)
+{
 	double ret;
 	double rho = r / xi;
 	double upperlim = 0.5 * pow(pi*xi/a,2);
@@ -242,7 +291,10 @@ double Utable::getHeightDiffFunc(int n, double r, double xi,
         ell >= minell && ell <= maxell &&
           n <= maxn) {
     
-       ret = upperlim_correct(n, ell, rho, upperlim);
+       //ret = upperlim_correct(n, ell, rho, upperlim);
+       //cout << "rho: " << rho << " ell: " << ell << " j: " << n  << " upperlim: " << upperlim<< endl;
+        ret = dointeg(rho, ell,rst, n, upperlim); // MFE
+
 //cout << "from upperlim_correct --> " << ret << endl;
 	// The input rho, ell, or n is outside the interpolation range
 	// Resort to the asymptotic form . . .
@@ -251,10 +303,10 @@ double Utable::getHeightDiffFunc(int n, double r, double xi,
 		// --> Do the integration on the fly.
 		if ( rho < minrho ) {
 //cout << "full blown calculation" << endl;
-			ret = dointeg(rho, ell, n, upperlim);		
+            ret = dointeg(rho, ell,rst, n, upperlim);
 		} else {
 //cout << "Asymptotic form" << endl;
-			ret = AsymForm(rho, ell, n, upperlim);
+            ret = AsymForm(rho, ell,rst, n, upperlim);
 		}
 	}
 	return ret * eta * D * D / 2 / pi / pi;
@@ -262,7 +314,7 @@ double Utable::getHeightDiffFunc(int n, double r, double xi,
 
 // Calculates the height difference function 
 // for n=0 and rho <= 0.005
-double Utable::nzero_small_rho(double rho, double ell, double upperlim)
+double Utablenzero_small_rho(double rho, double ell, double upperlim)
 {
     double ret;
     double tau = upperlim;
@@ -272,19 +324,104 @@ double Utable::nzero_small_rho(double rho, double ell, double upperlim)
     ret = ret * (ell*ell - 2) / 2;
     ret = -ret + (ell * (beta - 1));
     ret = rho*rho * ret / 2;
-    //cout << "rho: " << rho << " ell: " << ell << " ret: " << ret << endl;
 
+    return ret;
+}
+
+struct Elippi_params{
+    long double kk;
+    double a;
+};
+
+double my_I1 (double x, void *params)
+{
+    struct Elippi_params *tempp= (struct Elippi_params *) params;
+    double sn=sin(x);
+    double k2=tempp->kk;
+    double alpha=tempp->a;
+    return 1.0/sqrt(1-k2*sn*sn)/(1-alpha*sn*sn);
+}
+
+double Utable::nzero_small_rho(double rho, double ell,double rst, double upperlim)
+{
+    double ret;
+    long double tau = upperlim;
+    long double ell1=ell*rst*(1+rst);
+    long double ell2=ell*(1+rst);
+    
+    long double v1=1/ell1;
+    long double v2, vr, vi;
+    solveCubic(-ell1,1,ell2,1,v2, vr, vi);
+    double A1=pow(pow(v1-vr,2)+pow(vi,2),1./2);
+    double A2=pow(pow(v2-vr,2)+pow(vi,2),1./2);
+    double g=1./pow(A1*A2,1./2);
+    long double kk=pow(( pow(A1+A2,2) - pow(v1-v2,2) )/(4*A1*A2),1./2);
+    double phi=(acos((A1*(tau-v2)-A2*(tau-v1))/(A1*(tau-v2)+A2*(tau-v1))));
+    double phi0=(acos((A1*(0.-v2)-A2*(0.-v1))/(A1*(0.-v2)+A2*(0.-v1))));
+    double a=(A2+A1)/(A2-A1);
+    double ap=(A2*v1+A1*v2)/(A2+A1);
+    double am=(A2*v1-A1*v2)/(A2-A1);
+    
+    double I0;//=boost::math::ellint_1(kk, phi)-boost::math::ellint_1(kk, phi0);
+    double memory = 100000;
+    gsl_integration_workspace * w
+      = gsl_integration_workspace_alloc (memory); // 100000 in utable
+    double result, error;
+    double abs_error = 0;        /* to avoid round-off problems */
+    double rel_error = 1.0e-4;    /* the result will usually be much better */
+    double lower_limit = phi0;    /* lower limit */
+    double upper_limit = phi;/* upper limit */
+    struct Elippi_params temp={pow(kk,2.),0.};// print phi,phi0,kk**2,alpha and compare them to jupyter
+    gsl_function My_function;
+    My_function.function = my_I1;
+    My_function.params = &temp;
+    gsl_integration_qag (&My_function, lower_limit, upper_limit, abs_error, rel_error, memory, 6, w, &result, &error);
+    gsl_integration_workspace_free (w);
+    I0=result;
+    //I0=boost::math::ellint_1(kk, phi)-boost::math::ellint_1(kk, phi0);
+    
+    
+    double PI;
+    temp={pow(kk,2.),a*a/(a*a-1)};// print phi,phi0,kk**2,alpha and compare them to jupyter
+    //gsl_function My_function;
+    My_function.function = my_I1;
+    My_function.params = &temp;
+    gsl_integration_qag (&My_function, lower_limit, upper_limit, abs_error, rel_error, memory, 6, w, &result, &error);
+    
+    gsl_integration_workspace * w1
+      = gsl_integration_workspace_alloc (memory); // 100000 in utable
+    gsl_integration_workspace_free (w1);
+    PI=result; // =Get_PI(phi0,phi,kk,a)
+    
+    double Iu;
+    double f10;
+    double f1;
+    double sn0=sin(phi0);
+    double dn0=pow(1-kk*kk*sn0*sn0,1./2);
+    double sd0=sn0/dn0;
+    double sn=sin(phi);
+    double dn=pow(1-kk*kk*sn*sn,1./2);
+    double sd=sn/dn;
+//    ds=1./sd;
+    double theta=pow((a*a-1)/(kk*kk+(1-kk*kk)*a*a),1./2);
+    f1=theta/2.*log((sd+theta) / (sd-theta));
+    f10=theta/2.*log((sd0+theta) / (sd0-theta));
+    Iu=(a*(f1-f10)-PI)/(a*a-1);
+    
+    double I1=g*ap*I0+(am-ap)*g*Iu;
+    ret = (I0*g+I1*ell2)/ell1;
+    ret = rho*rho * ret / 2 ;
     return ret;
 }
 
 // Calculate correction because of the choice of upper limit used to create the table.
 // for n=0 and rho<20 calculate integral (done in do_interp2d)
 // for n=1 and rho<10 calculate integral (done in do_interp2d)
-double Utable::upperlim_correct(int n, double ell, double rho, double upperlim)
+double Utable::upperlim_correct(int n, double ell,double rst, double rho, double upperlim)
 {
     double ret;
 
-	ret = do_interp2d(rho, ell, n, upperlim);
+    ret = do_interp2d(rho, ell,rst, n, upperlim);
 	if ( n > 1 ) {
 		double correction = C_n_gr_one(upperlim,ell) - C_n_gr_one(upperlim_set,ell);
     	ret += correction; 
@@ -308,8 +445,8 @@ double C_n_gr_one(double x, double ell)
 
 // Asymptotic form of the height-height correlation function.
 // Defined in MJ thesis.
-double Utable::AsymForm(double rho, double ell, int n, double upperlim)
-{       
+double Utable::AsymForm(double rho, double ell,double rst, int n, double upperlim)
+{
     //Euler's constant = 0.5772156649    
     double gamma = 0.5772156649;
     double ret = 0;
@@ -324,7 +461,9 @@ double Utable::AsymForm(double rho, double ell, int n, double upperlim)
     
     if (n > 0) {
 	double z = rho * rho / 4 / n;    
-        ret += expIntegral(z) - ell * exp(-z) * (1 - z) / 4 / n;
+        //ret += expIntegral(z) + ell * exp(-z) * (1 - z) / 4 / n;
+        //ret += expIntegral(z) - ell * exp(-z) * (1 - z) / 4 / n; // MFE
+        ret += expIntegral(z) + (1+rst)*(1+rst) * ell * exp(-z) * (1 - z) / 4 / n; // MFE
     }
     ret += log(rho * rho) + (2 * gamma) + temp;
     
@@ -334,12 +473,12 @@ double Utable::AsymForm(double rho, double ell, int n, double upperlim)
 // Do interpolation of the 2-dimensional splines.
 // If n==0 or n==1 compute height-height function on the fly
 // otherwise use interpolants.
-double Utable::do_interp2d(double rho, double ell, int n, double upperlim)
-{       
+double Utable::do_interp2d(double rho, double ell,double rst, int n, double upperlim)
+{
 	double ret;    
 	double logrho = log(rho);
 	if ( n==0 || n==1 ) {
-		ret = dointeg(rho, ell, n, upperlim);
+        ret = dointeg(rho, ell,rst, n, upperlim);
 	} else {
 		ret = interp2d_spline_eval(splines[n], logrho, ell, rhoaccs[n], ellaccs[n]);
 	}
@@ -349,7 +488,7 @@ double Utable::do_interp2d(double rho, double ell, int n, double upperlim)
 
 /******************************************************************************/
 /* Create the utable. By default the utable file is named utab.dat */
-void Utable::writeUtableFile()
+double Utable::writeUtableFile(double rst)
 { 
     int numlayers = 2000;
     string input;
@@ -445,7 +584,7 @@ void Utable::writeUtableFile()
     for (int n = 0; n <= numlayers; n++) {
     	for (int j = 0; j < sizeell ; j++) {
     		for (int i = 0; i < sizerho; i++) {
-       			outfile << heightDiff(exp(rhovec[i]), ellvec[j], n, upperlim) << " ";
+       			outfile << heightDiff(exp(rhovec[i]), ellvec[j],rst, n, upperlim) << " ";
     		}
     		outfile << endl;
     	}
