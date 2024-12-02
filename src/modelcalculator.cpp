@@ -69,7 +69,6 @@ teff = mc.teff; //new 3/30/15
   edisp = mc.edisp;
   mosaic = mc.mosaic;
   wavelength = mc.wavelength;
-  rst = mc.rst; //mfe
   pixelSize = mc.pixelSize;
   bFWHM = mc.bFWHM;
   sdistance = mc.sdistance;
@@ -609,7 +608,7 @@ double ModelCalculator::get_un_value(int n, double r)
   double xit_2 = 1e16 * Kc/Kt; //prefactor to convert from cm^2 to angstrom^2
   double ell = 2 * xit_2 / (xi * xi);
   double eta = 2.16872 * (T+273.15) / sqrt(Kc*B) / dspacing /dspacing;
-  un = utable.getHeightDiffFunc(n, r, xi, ell,rst, eta, dspacing, at);
+  un = utable.getHeightDiffFunc(n, r, xi, ell, eta, dspacing, at);
   return un;
 }
 
@@ -618,7 +617,7 @@ Write u-table file.
 ******************************************************************************/
 void ModelCalculator::make_un_table()
 {
-  utable.writeUtableFile(rst);
+  utable.writeUtableFile();
 }
 
 /******************************************************************************
@@ -648,14 +647,14 @@ max_n = 1; /* calculates using only n=0 */
 
   //Calculate n=0 term separately because it has 1/2 weight relatively to n>0 terms
   int n = 0;
-  un = utable.getHeightDiffFunc(n, r, xi, ell,rst, eta, dspacing, at);
+  un = utable.getHeightDiffFunc(n, r, xi, ell, eta, dspacing, at);
 //cout << "r= " << r << "; at= " << at << "; un= " << un << endl;
 //usleep(10000);
   t1 = 1 + un*sig2;
   t2 = n * dspacing;
   sum += Hz(n) * sqrt(1/t1) * exp( -0.5*(qz2*un+t2*t2*sig2)/t1 ) * cos(t2*qz/t1);
   for(n = 1; n < max_n; n++) {
-    un = utable.getHeightDiffFunc(n, r, xi, ell,rst, eta, dspacing, at);
+    un = utable.getHeightDiffFunc(n, r, xi, ell, eta, dspacing, at);
     t1 = 1 + un*sig2;
     t2 = n * dspacing;
     sum += 2 * Hz(n) * sqrt(1/t1) * exp( -0.5*(qz2*un+t2*t2*sig2)/t1 ) * cos(t2*qz/t1);
@@ -908,7 +907,6 @@ void ModelCalculator::setpara(double value, int idx)
     case Var_divergeX: divergeX = value; XiTxChanged(); break; //new 2/26/15
     case Var_divergeZ: divergeZ = value; XiTzChanged(); break; //new 2/26/15
     case Var_teff: teff = value; break; //new 3/30/15
-    case Var_rst: rst = value; break; // mfe
 		default: ;
   }
 
@@ -936,7 +934,6 @@ void ModelCalculator::paraSet(Para *p)
   avgLr = p->avgLr;
   avgMz = p->avgMz;
   edisp = p->edisp;
-  rst = p->rst; // mfe
   wavelength = p->setup.wavelength;
   pixelSize = p->setup.pz;
   bFWHM = p->bFWHM;
