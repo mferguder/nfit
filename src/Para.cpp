@@ -66,6 +66,7 @@ void Para::setValue(double value, int index)
     case Var_divergeX:           divergeX = value;                  break; //new
     case Var_divergeZ:           divergeZ = value;                  break; //new
     case Var_teff:                   teff = value; 		            break; //new
+    case Var_rst: rst = value; break; // mfe
     case Var_WrongInput: cerr << "Var_WrongInput at Para::setValue" << endl; break;
     default: cerr << "wrong index input to Para::setValue" << endl; break;
   }
@@ -94,9 +95,10 @@ double Para::getValue(int index)
     case Var_Kt:         value = Kt; break; //new
     case Var_at:         value = at; break; //new
     case Var_Ls:         value = Ls; break; //new
-	case Var_divergeX:   value = divergeX; break; //new
-	case Var_divergeZ:   value = divergeZ; break; //new
-	case Var_teff:       value = teff; break; //new
+    case Var_divergeX:   value = divergeX; break; //new
+    case Var_divergeZ:   value = divergeZ; break; //new
+    case Var_teff:       value = teff; break; //new
+    case Var_rst: value = rst; break; // mfe
     case Var_WrongInput: cerr << "Var_WrongInput at Para::getValue" << endl; break;
     default: cerr << "wrong index input to Para_getValue" << endl; break;
   }
@@ -148,6 +150,7 @@ are defined through enum Var (see nfit.h).
 18. divergeX
 19. divergez
 20. teff
+21. rst // mfe
 ******************************************************************************/
 void Para::set_index (const vector<bool>& x)
 {
@@ -224,6 +227,7 @@ Var stringToVarEnum(const string& inString)
   else if (inString == "divergeX")    return Var_divergeX;  //new
   else if (inString == "divergeZ")    return Var_divergeZ;  //new
   else if (inString == "teff")        return Var_teff;  //new
+  else if (inString == "rst") return Var_rst; // mfe
   else {
 	  cerr << "Wrong input to stringToVarEnum" << endl;
     return Var_WrongInput;
