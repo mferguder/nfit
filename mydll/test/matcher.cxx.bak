@@ -1,0 +1,50 @@
+#include <iostream>
+#include <math.h>
+#include <mydll.h>
+#include <ctime>
+
+#include <tcl.h>
+#include <tk.h>
+//#include <blt.h>
+
+Matcher *matcher;
+Tcl_Interp *interp;
+
+
+int main(int argc, char *argv[]){
+  srand(1000);
+  interp=Tcl_CreateInterp();
+  Tk_MainEx(argc, argv, Tcl_AppInit,interp);
+  return(0);
+}
+
+int yl_matcherinit(ClientData clientData, Tcl_Interp *interp,int objc, Tcl_Obj *const objv[]){
+  int sz;
+  Tcl_GetIntFromObj( interp, objv[1], &sz );
+  matcher = new Matcher(sz);
+}
+
+int yl_push(ClientData clientData, Tcl_Interp *interp,int objc, Tcl_Obj *const objv[]){
+  double x, y, rx, ry;
+  Tcl_GetDoubleFromObj(interp, objv[1], &x);
+  Tcl_GetDoubleFromObj(interp, objv[2], &y);
+  Tcl_GetDoubleFromObj(interp, objv[3], &rx);
+  Tcl_GetDoubleFromObj(interp, objv[4], &ry);
+
+  matcher->push( rx, ry, x, y);
+
+  return TCL_OK;
+}
+
+int yl_match(ClientData clientData, Tcl_Interp *interp,int objc, Tcl_Obj *const objv[]){
+  cmatrix x;
+  matcher->match(x);
+  cout<<x<<endl;
+}
+
+
+int Tcl_AppInit(Tcl_Interp *interp){
+  Tcl_CreateObjCommand(interp,"match", yl_match, (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+  Tcl_CreateObjCommand(interp,"push", yl_push, (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+  Tcl_CreateObjCommand(interp,"matcher_init", yl_matcherinit, (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+}

@@ -1,0 +1,142 @@
+#include <mydll.h>
+#include <iostream>
+#include <time.h>
+
+#define DIMI 303
+#define DIMK 403
+#define DIMJ 503
+
+
+int testblock2(){
+  double *a, *b, *c, *c2;
+  double sum;
+
+  a = (double*)malloc(DIMI*DIMK*sizeof(double));
+  b = (double*)malloc(DIMK*DIMJ*sizeof(double));
+  c = (double*)malloc(DIMI*DIMJ*sizeof(double));
+  c2 = (double*)malloc(DIMI*DIMJ*sizeof(double));
+		      
+  if(a==NULL || b==NULL || c==NULL || c2==NULL) return 0;
+
+  for(int i=0; i<DIMI*DIMK; i++){
+    a[i] = (rand()%1000);
+    if(isnan(a[i])) return 0;
+  }
+  for(int i=0; i<DIMK*DIMJ; i++){
+    b[i] = (rand()%1000);
+    if(isnan(b[i])) return 0;
+  }
+
+  yl_blas_dset(DIMI*DIMJ, 0, c, 1);
+  yl_blas_dset(DIMI*DIMJ, 0, c2, 1);
+
+
+  cout<<(int)a<<' '<<(int)b<<' '<<(int)c2<<endl;
+  yl_cblas_dgemm_n_ijk(a, DIMK, 1,
+		       b, DIMJ, 1,
+		       c2, DIMJ, 1,
+		       DIMI, DIMK, DIMJ);
+
+
+}
+
+int testblock(){
+  double *a, *b, *c, *c2;
+  double sum;
+  clock_t t1, t2;
+  a = (double*)malloc(DIMI*DIMK*sizeof(double));
+  b = (double*)malloc(DIMK*DIMJ*sizeof(double));
+  c = (double*)malloc(DIMI*DIMJ*sizeof(double));
+  c2 = (double*)malloc(DIMI*DIMJ*sizeof(double));
+		      
+  if(a==NULL || b==NULL || c==NULL || c2==NULL) return 0;
+  for(int i=0; i<DIMI*DIMK; i++) a[i] = (rand()%1000);
+  for(int i=0; i<DIMK*DIMJ; i++) b[i] = (rand()%1000);
+
+  //yl_blas_dset(DIMI*DIMK, 10001, a, 1);
+  //yl_blas_dset(DIMK*DIMJ, 10002, b, 1);
+
+  yl_blas_dset(DIMI*DIMJ, 0, c, 1);
+  yl_blas_dset(DIMI*DIMJ, 0, c2, 1);
+  t1 = clock();
+  yl_cblas_dgemm_n_ijk(a, DIMK, 1,
+		       b, DIMJ, 1,
+		       c2, DIMJ, 1,
+		       DIMI, DIMK, DIMJ);
+  t2 = clock();
+  cout<<"b_ijk: "<<(t2-t1)/CLK_TCK<<endl;
+
+  //return 0;
+  //  goto L1;
+  t1 = clock();
+  yl_cblas_dgemm(a, DIMK, 1,
+	       b, DIMJ, 1,
+	       c, DIMJ, 1,
+	       DIMI, DIMK, DIMJ, 1, 0, 0);
+  t2 = clock();
+  cout<<"bp_ijk: "<<(t2-t1)/CLK_TCK<<endl;
+L1:  sum = 0;
+  for(int i=0; i<DIMI*DIMJ; i++){
+    // cout<<c[i]<<' '<<c2[i]<<endl; getchar();
+    sum+=fabs(c[i]-c2[i]);
+    //    cout<<sum<<' ';
+    if(isnan(sum)) {cout<<'\n'<<i<<' '<<c[i]<<' '<<c2[i]<<endl; getchar();}
+  }
+  cout<<"sum: "<<sum<<endl;
+  yl_blas_dset(DIMI*DIMJ, 0, c, 1);
+ 
+  t1 = clock();
+  yl_cblas_dgemm2(a, DIMK, 1,
+		  b, DIMJ, 1,
+		  c, DIMJ, 1,
+		  DIMI, DIMK, DIMJ);
+  t2 = clock();
+  cout<<"nb_ijk: "<<(t2-t1)/CLK_TCK<<endl;
+  sum = 0;
+  for(int i=0; i<DIMI*DIMJ; i++) sum+=fabs(c[i]-c2[i]);
+  cout<<"sum: "<<sum<<endl;
+  yl_blas_dset(DIMI*DIMJ, 0, c, 1);
+  
+  t1 = clock();
+  yl_cblas_dgemm_np_ijk(a, DIMK, 1,
+			b, DIMJ, 1,
+			c, DIMJ, 1,
+			DIMI, DIMK, DIMJ);
+  t2 = clock();
+  cout<<"nbp_ijk: "<<(t2-t1)/CLK_TCK<<endl;
+  sum = 0;
+  for(int i=0; i<DIMI*DIMJ; i++) sum+=fabs(c[i]-c2[i]);
+  cout<<"sum: "<<sum<<endl;
+  
+  return 0;
+}
+
+void simpledisp(double *c){
+  cout<<c[0]<<' '<<c[1]<<' '<<c[2]<<endl;
+  cout<<c[3]<<' '<<c[4]<<' '<<c[5]<<endl;
+  cout<<c[6]<<' '<<c[7]<<' '<<c[8]<<endl;
+}
+
+int testsimple(){
+  double a[] = { 1, 2, 3,
+		 4, 5, 6,
+		 7, 8, 9};
+  double b[] = { 0, 1, 0,
+		 1, 0, 0,
+		 0, 0, 1};
+  double c[9];
+  yl_blas_dset(9, 0, c, 1);
+  yl_cblas_dgemm(a, 3, 1,
+		 b, 3, 1,
+		 c, 3, 1,
+		 3, 3, 3, 1, 0, 0);
+  simpledisp(c);
+
+  return 0;
+}
+
+int main(){
+  testblock();
+  //  testsimple();
+  return 0;
+}
