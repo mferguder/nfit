@@ -78,7 +78,7 @@ double ln1[32],ln0[32];
 double sx[3];
 int sxpin[4]={1,1,1,1};
 double xisquare;
-double NKparams[20];
+double NKparams[21];
 SetUp setup;
 Blt_Vector *xVP[4], *plotxVP, *plotyVP;
 
@@ -1434,7 +1434,7 @@ extern "C" int Toad_Init(Tcl_Interp *interp){
     sprintf(varname,"sxpin(%d)",i);
     Tcl_LinkVar(interp,varname,(char *)&(sxpin[i]), TCL_LINK_INT);
   }
-  for(int i=0;i<18;i++){
+  for(int i=0;i<19;i++){
     sprintf(varname,"NKparams(%d)",i);
     Tcl_LinkVar(interp,varname,(char *)&(NKparams[i]), TCL_LINK_DOUBLE);
   }
