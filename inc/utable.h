@@ -23,15 +23,15 @@ public:
     ~Utable(){cleanup();}
     void cleanup();
     void interp2d_splines_accs_cleanup();
-    double heightDiff(double, double, int, double); 
-    double dointeg(double, double, int, double);
+    double heightDiff(double, double,double, int, double); 
+    double dointeg(double, double,double, int, double);
     static double my_integrand(double, void *);
-    double getHeightDiffFunc(int, double, double, double, double, double, double);
-    double nzero_small_rho(double, double, double);
-	double upperlim_correct(int, double, double, double);
-    double AsymForm(double, double, int, double);
-    double do_interp2d(double, double, int, double);
-    void writeUtableFile();
+    double getHeightDiffFunc(int, double, double,double, double, double, double, double);
+    double nzero_small_rho(double, double,double, double);
+	double upperlim_correct(int, double, double,double, double);
+    double AsymForm(double, double,double, int, double);
+    double do_interp2d(double, double,double, int, double);
+    void writeUtableFile(double);
 	void readUtableFile(const std::string&);
 	void readUtableFile(const char *);
 
